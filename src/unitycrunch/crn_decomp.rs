@@ -14,7 +14,7 @@ pub fn crnd_unpack_begin(p_data: &[u8], data_size: u32) -> Result<CrnUnpacker, &
     Ok(p)
 }
 
-pub fn crnd_get_crn_format_bits_per_texel(fmt: &mut CrnFormat) -> Result<u32, &'static str> {
+pub fn crnd_get_crn_format_bits_per_texel(fmt: &CrnFormat) -> Result<u32, &'static str> {
     match fmt {
         CrnFormat::Dxt1
         | CrnFormat::Dxt5a
@@ -37,7 +37,7 @@ pub fn crnd_get_crn_format_bits_per_texel(fmt: &mut CrnFormat) -> Result<u32, &'
     }
 }
 
-pub fn crnd_get_bytes_per_dxt_block(fmt: &mut CrnFormat) -> Result<u32, &'static str> {
+pub fn crnd_get_bytes_per_dxt_block(fmt: &CrnFormat) -> Result<u32, &'static str> {
     Ok((match crnd_get_crn_format_bits_per_texel(fmt) {
         Ok(s) => s,
         Err(e) => return Err(e),

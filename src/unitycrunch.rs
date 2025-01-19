@@ -5,6 +5,53 @@ use crate::bcn;
 use crate::{decode_etc1, decode_etc2_rgb, decode_etc2_rgba8};
 extern crate alloc;
 
+pub struct CrunchHandle {
+    tex_info: CrnTextureInfo,
+}
+
+impl CrunchHandle {
+    pub fn new(data: &[u8]) -> Result<Self, &'static str> {
+        let mut tex_info: CrnTextureInfo = CrnTextureInfo::default();
+        if !tex_info.crnd_get_texture_info(data, data.len() as u32) {
+            return Err("Invalid crunch texture encoding.");
+        }
+        dbg!(&tex_info);
+        if tex_info.faces != 1 {
+            return Err("Texture2D must only have 1 number of faces.");
+        }
+        Ok(Self {
+            tex_info,
+        })
+    }
+
+    pub fn get_num_levels(&self) -> u32 {
+        self.tex_info.levels
+    }
+
+    pub fn unpack_level(&self, data: &[u8], level_index: u32) -> Result<alloc::vec::Vec<u8>, &'static str> {
+        let mut p_context: crn_unpacker::CrnUnpacker<'_> =
+            match crn_decomp::crnd_unpack_begin(data, data.len() as u32) {
+                Ok(p_context) => p_context,
+                Err(res) => return Err(res),
+            };
+        let width = core::cmp::max(1, self.tex_info.width >> level_index);
+        let height = core::cmp::max(1, self.tex_info.height >> level_index);
+        let blocks_x: u32 = core::cmp::max(1, (width + 3) >> 2);
+        let blocks_y: u32 = core::cmp::max(1, (height + 3) >> 2);
+        dbg!(width, height, blocks_x, blocks_y);
+        let row_pitch: u32 = blocks_x
+            * match crn_decomp::crnd_get_bytes_per_dxt_block(&self.tex_info.format) {
+                Ok(s) => s,
+                Err(e) => return Err(e),
+            };
+        let total_face_size: u32 = row_pitch * blocks_y;
+        match p_context.crnd_unpack_level(total_face_size, row_pitch, level_index) {
+            Ok(res) => Ok(res),
+            Err(err) => Err(err),
+        }
+    }
+}
+
 struct CrunchDecodeHandler {
     format: CrnFormat,
     dxt_data: alloc::vec::Vec<u8>,

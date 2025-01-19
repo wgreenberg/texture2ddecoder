@@ -104,4 +104,4 @@ pub use crnlib::CrnTextureInfo;
 pub use crunch::decode_crunch;
 pub use etc::*;
 pub use pvrtc::*;
-pub use unitycrunch::decode_unity_crunch;
+pub use unitycrunch::{decode_unity_crunch, CrunchHandle};
